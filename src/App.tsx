@@ -273,10 +273,12 @@ export default function App() {
                 <div className="card-img-wrap relative w-full h-full overflow-hidden bg-[#111]">
                   <video 
                     ref={el => videoRefs.current[0] = el}
+                    autoPlay
                     muted={isMuted}
                     loop 
                     playsInline
                     preload="auto"
+                    crossOrigin="anonymous"
                     className="card-img w-full h-full object-cover"
                   >
                     <source src="/carpentry.mp4" type="video/mp4" />
@@ -375,10 +377,12 @@ export default function App() {
                 <div className="card-img-wrap relative w-full h-full overflow-hidden bg-[#111]">
                   <video 
                     ref={el => videoRefs.current[1] = el}
+                    autoPlay
                     muted 
                     loop 
                     playsInline
                     preload="auto"
+                    crossOrigin="anonymous"
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
                   >
                     <source src="/repairs.mp4" type="video/mp4" />
@@ -410,14 +414,17 @@ export default function App() {
                 <div className="card-img-wrap relative w-full h-full overflow-hidden bg-[#111]">
                   <video 
                     ref={el => videoRefs.current[2] = el}
+                    autoPlay
                     muted 
                     loop 
                     playsInline
                     preload="auto"
+                    crossOrigin="anonymous"
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
                   >
+                    <source src="/banz_reno_vid2.mp4" type="video/mp4" />
                     <source src="/renovation.mp4" type="video/mp4" />
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40546-large.mp4" type="video/mp4" />
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4" type="video/mp4" />
                   </video>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -455,12 +462,15 @@ export default function App() {
             <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-[#111]">
               <video 
                 ref={el => videoRefs.current[3] = el}
+                autoPlay
                 muted 
                 loop 
                 playsInline
                 preload="auto"
+                crossOrigin="anonymous"
                 className="w-full h-full object-cover"
               >
+                <source src="/banz_reno_washroom.mp4" type="video/mp4" />
                 <source src="/transformation.mp4" type="video/mp4" />
                 <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4" type="video/mp4" />
               </video>
