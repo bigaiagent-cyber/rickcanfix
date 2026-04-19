@@ -27,49 +27,15 @@ export default function App() {
   const [duration, setDuration] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  // Force play videos when they enter the viewport using ScrollTrigger
-  useEffect(() => {
-    videoRefs.current.forEach((video) => {
-      if (!video) return;
-      
-      ScrollTrigger.create({
-        trigger: video,
-        start: "top 80%",
-        onEnter: () => {
-          video.play().catch(e => console.log("Playback start failed:", e));
-        },
-        onEnterBack: () => {
-          video.play().catch(e => console.log("Playback resume failed:", e));
-        }
-      });
-    });
-    
-    // Track time and duration for the first video (Master Carpentry)
-    const masterVideo = videoRefs.current[0];
-    if (masterVideo) {
-      const updateTime = () => setCurrentTime(masterVideo.currentTime);
-      const updateDuration = () => setDuration(masterVideo.duration);
-      
-      masterVideo.addEventListener('timeupdate', updateTime);
-      masterVideo.addEventListener('loadedmetadata', updateDuration);
-      
-      return () => {
-        masterVideo.removeEventListener('timeupdate', updateTime);
-        masterVideo.removeEventListener('loadedmetadata', updateDuration);
-        ScrollTrigger.getAll().forEach(t => t.kill());
-      };
-    }
-
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
-  }, []);
-
+  // Preloader side-effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsSidebarOpen(true);
     }, 2000);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -100,6 +66,28 @@ export default function App() {
             .to('.loader', { yPercent: -100, duration: 1, ease: 'power4.inOut' });
 
       function initSite() {
+        // Video Initialization
+        videoRefs.current.forEach((video, i) => {
+          if (!video) return;
+          
+          ScrollTrigger.create({
+            trigger: video,
+            start: "top 80%",
+            onEnter: () => {
+              video.play().catch(e => console.log(`Video ${i} playback failed:`, e));
+            },
+            onEnterBack: () => {
+              video.play().catch(e => console.log(`Video ${i} resume failed:`, e));
+            }
+          });
+
+          // Metadata/Time tracking for the first video
+          if (i === 0) {
+            video.addEventListener('timeupdate', () => setCurrentTime(video.currentTime));
+            video.addEventListener('loadedmetadata', () => setDuration(video.duration));
+          }
+        });
+
         // Hero Animations
         gsap.to('.hero-text span', {
           y: 0,
@@ -278,11 +266,11 @@ export default function App() {
                     loop 
                     playsInline
                     preload="auto"
-                    crossOrigin="anonymous"
+                    onLoadedData={(e) => e.currentTarget.play()}
                     className="card-img w-full h-full object-cover"
                   >
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4" type="video/mp4" />
                     <source src="/carpentry.mp4" type="video/mp4" />
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4" type="video/mp4" />
                   </video>
                   
                   {/* OVERLAY CONTROLS */}
@@ -382,11 +370,11 @@ export default function App() {
                     loop 
                     playsInline
                     preload="auto"
-                    crossOrigin="anonymous"
+                    onLoadedData={(e) => e.currentTarget.play()}
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
                   >
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4" type="video/mp4" />
                     <source src="/repairs.mp4" type="video/mp4" />
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4" type="video/mp4" />
                   </video>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -419,12 +407,12 @@ export default function App() {
                     loop 
                     playsInline
                     preload="auto"
-                    crossOrigin="anonymous"
+                    onLoadedData={(e) => e.currentTarget.play()}
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
                   >
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4" type="video/mp4" />
                     <source src="/banz_reno_vid2.mp4" type="video/mp4" />
                     <source src="/renovation.mp4" type="video/mp4" />
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4" type="video/mp4" />
                   </video>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -467,12 +455,12 @@ export default function App() {
                 loop 
                 playsInline
                 preload="auto"
-                crossOrigin="anonymous"
+                onLoadedData={(e) => e.currentTarget.play()}
                 className="w-full h-full object-cover"
               >
-                <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4" type="video/mp4" />
                 <source src="/banz_reno_washroom.mp4" type="video/mp4" />
                 <source src="/transformation.mp4" type="video/mp4" />
+                <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4" type="video/mp4" />
               </video>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                 <Play className="w-12 h-12 text-white" />
