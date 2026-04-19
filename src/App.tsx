@@ -18,7 +18,7 @@ const splitWords = (text: string) => {
   ));
 };
 
-// --- ROBUST VIDEO COMPONENT ---
+// --- NATIVE VIDEO COMPONENT ---
 interface VideoBackgroundProps {
   id: number;
   localSrc: string;
@@ -28,88 +28,21 @@ interface VideoBackgroundProps {
 }
 
 const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>(
-  ({ id, localSrc, backupSrc, className, isMuted = true }, ref) => {
-    const [useBackup, setUseBackup] = useState(false);
-    const [hasError, setHasError] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    const currentSrc = useBackup ? backupSrc : localSrc;
-
-    // Reliability: Force re-play on scroll/mount
-    useEffect(() => {
-      const video = (ref as React.RefObject<HTMLVideoElement | null>)?.current;
-      if (!video) return;
-
-      const tryPlay = async () => {
-        try {
-          video.muted = isMuted;
-          const playPromise = video.play();
-          if (playPromise !== undefined) await playPromise;
-        } catch (err) {
-          if (!useBackup) setUseBackup(true);
-        }
-      };
-
-      tryPlay();
-    }, [currentSrc, isMuted, useBackup, ref]);
-
-    // High-resolution premium static backgrounds
-    const staticFallbacks = [
-      "https://images.unsplash.com/photo-1558444479-c8f010b417c9?q=80&w=2070&auto=format&fit=crop", // Carpentry
-      "https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=2070&auto=format&fit=crop", // Repairs
-      "https://images.unsplash.com/photo-1621905252507-b3523c448f9c?q=80&w=2070&auto=format&fit=crop", // Bathroom
-      "https://images.unsplash.com/photo-1595844730298-b960ff98fee0?q=80&w=2070&auto=format&fit=crop", // Transformation
-    ];
-
+  ({ localSrc, backupSrc, className, isMuted = true }, ref) => {
     return (
-      <div className={`relative w-full h-full ${className} bg-[#111] overflow-hidden group`}>
-        {/* Layer 0: Instant Static Fallback (Always there, hidden when loaded) */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={staticFallbacks[id % staticFallbacks.length]} 
-            alt="RickCanFix Craftsmanship" 
-            className="w-full h-full object-cover brightness-[0.4] grayscale-[0.5]"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-
-        {/* Layer 1: Professional Loading Animation */}
-        {!isLoaded && !hasError && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-700">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 border-t-2 border-l-2 border-white/40 rounded-full animate-spin mb-4" />
-              <span className="text-[10px] text-white/40 uppercase tracking-[0.3em] font-medium">Initialising Stream</span>
-            </div>
-          </div>
-        )}
-
-        {/* Layer 2: The Video Engine */}
-        {!hasError && (
-          <video
-            key={currentSrc}
-            ref={ref}
-            src={currentSrc}
-            autoPlay
-            muted={isMuted}
-            loop
-            playsInline
-            preload="auto"
-            referrerPolicy="no-referrer"
-            className={`absolute inset-0 z-10 w-full h-full object-cover transition-all duration-[1200ms] ease-out-expo ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
-            onLoadedData={() => {
-              setIsLoaded(true);
-              const video = (ref as React.RefObject<HTMLVideoElement | null>)?.current;
-              if (video) video.play().catch(() => {});
-            }}
-            onError={() => {
-              if (!useBackup) {
-                setUseBackup(true);
-              } else {
-                setHasError(true);
-              }
-            }}
-          />
-        )}
+      <div className={`relative w-full h-full ${className} bg-black`}>
+        <video
+          ref={ref}
+          autoPlay
+          muted={isMuted}
+          loop
+          playsInline
+          preload="auto"
+          className="w-full h-full object-cover"
+        >
+          <source src={localSrc} type="video/mp4" />
+          <source src={backupSrc} type="video/mp4" />
+        </video>
       </div>
     );
   }
@@ -308,13 +241,19 @@ export default function App() {
       {/* WRAPPER (Z-INDEX 10) */}
       <div className="wrapper relative z-10 bg-[#E3E1DC] mb-[100vh] shadow-[0_50px_100px_rgba(0,0,0,0.5)]">
         {/* HERO */}
-        <section className="h-screen relative flex items-center justify-center overflow-hidden">
-          <img 
-            src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=100" 
-            className="absolute inset-0 w-full h-full object-cover brightness-50 hero-img" 
-            alt="Hero Building" 
-            referrerPolicy="no-referrer"
-          />
+        <section className="h-screen relative flex items-center justify-center overflow-hidden bg-black">
+          <div className="absolute inset-0 z-0">
+            <video 
+              autoPlay 
+              muted 
+              loop 
+              playsInline 
+              preload="auto"
+              className="w-full h-full object-cover opacity-40 hero-img"
+            >
+              <source src="/transformation.mp4" type="video/mp4" />
+            </video>
+          </div>
           <div className="relative z-10 text-center text-white mix-blend-difference">
             <h1 className="display font-display text-[12vw] leading-none hero-text overflow-hidden font-bold">
               <span className="block translate-y-full">PRECISION</span>
@@ -597,13 +536,19 @@ export default function App() {
             © 2026 RICKCANFIX INC. CRAFTSMANSHIP & PRECISION.
           </div>
         </div>
-        {/* Footer Background Image */}
-        <img 
-          src="https://picsum.photos/seed/sawdust/1920/1080?blur=4" 
-          className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none" 
-          alt="Footer background"
-          referrerPolicy="no-referrer"
-        />
+        {/* Footer Background Video */}
+        <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+          <video 
+            autoPlay 
+            muted 
+            loop 
+            playsInline 
+            preload="auto"
+            className="w-full h-full object-cover"
+          >
+            <source src="/renovation.mp4" type="video/mp4" />
+          </video>
+        </div>
       </footer>
 
       {/* SIDEBAR */}
