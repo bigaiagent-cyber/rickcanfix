@@ -35,7 +35,7 @@ const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>
 
     const currentSrc = useBackup ? backupSrc : localSrc;
 
-    // Reliability: Re-attempt playback if it stalls
+    // Reliability: Force re-play on scroll/mount
     useEffect(() => {
       const video = (ref as React.RefObject<HTMLVideoElement | null>)?.current;
       if (!video) return;
@@ -43,7 +43,8 @@ const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>
       const tryPlay = async () => {
         try {
           video.muted = isMuted;
-          await video.play();
+          const playPromise = video.play();
+          if (playPromise !== undefined) await playPromise;
         } catch (err) {
           if (!useBackup) setUseBackup(true);
         }
@@ -52,17 +53,37 @@ const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>
       tryPlay();
     }, [currentSrc, isMuted, useBackup, ref]);
 
-    // Final static fallback images if all videos fail
+    // High-resolution premium static backgrounds
     const staticFallbacks = [
-      "https://images.pexels.com/photos/1249611/pexels-photo-1249611.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Carpentry
-      "https://images.pexels.com/photos/102127/pexels-photo-102127.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Repairs
-      "https://images.pexels.com/photos/1094767/pexels-photo-1094767.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Reno
-      "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Bathroom
+      "https://images.unsplash.com/photo-1558444479-c8f010b417c9?q=80&w=2070&auto=format&fit=crop", // Carpentry
+      "https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=2070&auto=format&fit=crop", // Repairs
+      "https://images.unsplash.com/photo-1621905252507-b3523c448f9c?q=80&w=2070&auto=format&fit=crop", // Bathroom
+      "https://images.unsplash.com/photo-1595844730298-b960ff98fee0?q=80&w=2070&auto=format&fit=crop", // Transformation
     ];
 
     return (
-      <div className={`relative w-full h-full ${className} bg-[#0a0a0a] overflow-hidden`}>
-        {/* The Video Layer */}
+      <div className={`relative w-full h-full ${className} bg-[#111] overflow-hidden group`}>
+        {/* Layer 0: Instant Static Fallback (Always there, hidden when loaded) */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={staticFallbacks[id % staticFallbacks.length]} 
+            alt="RickCanFix Craftsmanship" 
+            className="w-full h-full object-cover brightness-[0.4] grayscale-[0.5]"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
+        {/* Layer 1: Professional Loading Animation */}
+        {!isLoaded && !hasError && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-700">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 border-t-2 border-l-2 border-white/40 rounded-full animate-spin mb-4" />
+              <span className="text-[10px] text-white/40 uppercase tracking-[0.3em] font-medium">Initialising Stream</span>
+            </div>
+          </div>
+        )}
+
+        {/* Layer 2: The Video Engine */}
         {!hasError && (
           <video
             key={currentSrc}
@@ -74,7 +95,7 @@ const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>
             playsInline
             preload="auto"
             referrerPolicy="no-referrer"
-            className={`w-full h-full object-cover transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 z-10 w-full h-full object-cover transition-all duration-[1200ms] ease-out-expo ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
             onLoadedData={() => {
               setIsLoaded(true);
               const video = (ref as React.RefObject<HTMLVideoElement | null>)?.current;
@@ -88,29 +109,6 @@ const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>
               }
             }}
           />
-        )}
-
-        {/* Global Fallback (Static Image) - Shown if video fails or is loading */}
-        {(hasError || !isLoaded) && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 z-0"
-          >
-            <img 
-              src={staticFallbacks[id % staticFallbacks.length]} 
-              alt="Craftsmanship" 
-              className="w-full h-full object-cover grayscale brightness-50"
-              referrerPolicy="no-referrer"
-            />
-          </motion.div>
-        )}
-        
-        {/* Loading Spinner for high-end feel */}
-        {!isLoaded && !hasError && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="w-8 h-8 border-2 border-white/10 border-t-white/30 rounded-full animate-spin" />
-          </div>
         )}
       </div>
     );
