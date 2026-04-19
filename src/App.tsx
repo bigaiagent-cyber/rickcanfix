@@ -31,80 +31,85 @@ const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>
   ({ id, localSrc, backupSrc, className, isMuted = true }, ref) => {
     const [useBackup, setUseBackup] = useState(false);
     const [hasError, setHasError] = useState(false);
-    const [isAttemptingPlay, setIsAttemptingPlay] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     const currentSrc = useBackup ? backupSrc : localSrc;
 
-    // Use a secondary internal ref if the forwarded one is null (safety)
-    const internalRef = useRef<HTMLVideoElement>(null);
-    const activeRef = (ref as React.RefObject<HTMLVideoElement | null>) || internalRef;
-
+    // Reliability: Re-attempt playback if it stalls
     useEffect(() => {
-      const video = activeRef.current;
+      const video = (ref as React.RefObject<HTMLVideoElement | null>)?.current;
       if (!video) return;
 
       const tryPlay = async () => {
-        if (isAttemptingPlay) return;
-        setIsAttemptingPlay(true);
         try {
           video.muted = isMuted;
           await video.play();
-          console.log(`[VIDEO ${id}] Playing ${currentSrc}`);
         } catch (err) {
-          console.warn(`[VIDEO ${id}] Playback failed for ${currentSrc}.`, err);
-          if (!useBackup) {
-            console.log(`[VIDEO ${id}] Switching to backup...`);
-            setUseBackup(true);
-          }
-        } finally {
-          setIsAttemptingPlay(false);
+          if (!useBackup) setUseBackup(true);
         }
       };
 
       tryPlay();
-    }, [currentSrc, isMuted, useBackup, id, activeRef]);
+    }, [currentSrc, isMuted, useBackup, ref]);
+
+    // Final static fallback images if all videos fail
+    const staticFallbacks = [
+      "https://images.pexels.com/photos/1249611/pexels-photo-1249611.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Carpentry
+      "https://images.pexels.com/photos/102127/pexels-photo-102127.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Repairs
+      "https://images.pexels.com/photos/1094767/pexels-photo-1094767.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Reno
+      "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Bathroom
+    ];
 
     return (
-      <div className={`relative w-full h-full ${className} bg-black`}>
-        <video
-          key={currentSrc} // Force re-mount on source change for reliability
-          ref={ref}
-          src={currentSrc}
-          autoPlay
-          muted={isMuted}
-          loop
-          playsInline
-          preload="auto"
-          className="w-full h-full object-cover"
-          onLoadedData={() => {
-            const video = activeRef.current;
-            if (video) video.play().catch(() => {});
-          }}
-          onError={(e) => {
-            console.error(`[VIDEO ${id}] Source error: ${currentSrc}`);
-            if (!useBackup) {
-              setUseBackup(true);
-            } else {
-              setHasError(true);
-            }
-          }}
-        />
-        
-        {/* Diagnostic Status (Dev only/Diagnostic) */}
-        {!hasError && !useBackup && (
-          <div className="absolute top-2 right-2 opacity-10 pointer-events-none text-[8px] text-white uppercase">
-            Primary: {localSrc.split('/').pop()}
-          </div>
+      <div className={`relative w-full h-full ${className} bg-[#0a0a0a] overflow-hidden`}>
+        {/* The Video Layer */}
+        {!hasError && (
+          <video
+            key={currentSrc}
+            ref={ref}
+            src={currentSrc}
+            autoPlay
+            muted={isMuted}
+            loop
+            playsInline
+            preload="auto"
+            referrerPolicy="no-referrer"
+            className={`w-full h-full object-cover transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoadedData={() => {
+              setIsLoaded(true);
+              const video = (ref as React.RefObject<HTMLVideoElement | null>)?.current;
+              if (video) video.play().catch(() => {});
+            }}
+            onError={() => {
+              if (!useBackup) {
+                setUseBackup(true);
+              } else {
+                setHasError(true);
+              }
+            }}
+          />
+        )}
+
+        {/* Global Fallback (Static Image) - Shown if video fails or is loading */}
+        {(hasError || !isLoaded) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 z-0"
+          >
+            <img 
+              src={staticFallbacks[id % staticFallbacks.length]} 
+              alt="Craftsmanship" 
+              className="w-full h-full object-cover grayscale brightness-50"
+              referrerPolicy="no-referrer"
+            />
+          </motion.div>
         )}
         
-        {hasError && (
-          <div className="absolute inset-0 bg-[#0a0a0a] flex items-center justify-center p-4">
-            <div className="text-center group">
-              <p className="text-white/20 text-[10px] uppercase tracking-[0.2em] mb-4">
-                Playback Unavailable
-              </p>
-              <div className="w-12 h-[1px] bg-white/10 mx-auto" />
-            </div>
+        {/* Loading Spinner for high-end feel */}
+        {!isLoaded && !hasError && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="w-8 h-8 border-2 border-white/10 border-t-white/30 rounded-full animate-spin" />
           </div>
         )}
       </div>
@@ -376,7 +381,7 @@ export default function App() {
                   <VideoBackground 
                     id={0}
                     localSrc="/carpentry.mp4"
-                    backupSrc="https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4"
+                    backupSrc="https://player.vimeo.com/external/494252666.sd.mp4?s=bc1db91880468d2b78f44a86b3e246960d3d537d"
                     isMuted={isMuted}
                     ref={el => videoRefs.current[0] = el}
                   />
@@ -474,7 +479,7 @@ export default function App() {
                   <VideoBackground 
                     id={1}
                     localSrc="/repairs.mp4"
-                    backupSrc="https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4"
+                    backupSrc="https://player.vimeo.com/external/415858661.sd.mp4?s=d005e8e811fd3593630f9a2d677d2e07897c8d9e"
                     ref={el => videoRefs.current[1] = el}
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
@@ -504,7 +509,7 @@ export default function App() {
                   <VideoBackground 
                     id={2}
                     localSrc="/banz_reno_vid2.mp4"
-                    backupSrc="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4"
+                    backupSrc="https://player.vimeo.com/external/405432666.sd.mp4?s=33c3748290f6c770de4d5750d0360a7d5a576395"
                     ref={el => videoRefs.current[2] = el}
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
@@ -544,7 +549,7 @@ export default function App() {
               <VideoBackground 
                 id={3}
                 localSrc="/banz_reno_washroom.mp4"
-                backupSrc="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4"
+                backupSrc="https://player.vimeo.com/external/405432666.sd.mp4?s=33c3748290f6c770de4d5750d0360a7d5a576395"
                 ref={el => videoRefs.current[3] = el}
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
