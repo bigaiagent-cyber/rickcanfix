@@ -15,5 +15,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/(carpentry|repairs|banz_reno_vid2|banz_reno_washroom|renovation|transformation).mp4",
+      "destination": "/$1.mp4"
+    }
   ]
 }

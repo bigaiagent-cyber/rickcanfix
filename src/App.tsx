@@ -18,6 +18,66 @@ const splitWords = (text: string) => {
   ));
 };
 
+// --- ROBUST VIDEO COMPONENT ---
+interface VideoBackgroundProps {
+  id: number;
+  localSrc: string;
+  backupSrc: string;
+  className?: string;
+  isMuted?: boolean;
+  videoRef?: React.RefObject<HTMLVideoElement | null>; // Support for external control
+}
+
+const VideoBackground = ({ id, localSrc, backupSrc, className, isMuted = true, videoRef: externalRef }: VideoBackgroundProps) => {
+  const internalRef = useRef<HTMLVideoElement>(null);
+  const videoRef = externalRef || internalRef;
+  const [currentSrc, setCurrentSrc] = useState(localSrc);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const startPlayback = async () => {
+      try {
+        video.muted = isMuted;
+        await video.play();
+      } catch (err) {
+        if (currentSrc === localSrc) setCurrentSrc(backupSrc);
+      }
+    };
+
+    startPlayback();
+  }, [currentSrc, isMuted, id, localSrc, backupSrc, videoRef]);
+
+  return (
+    <div className={`relative w-full h-full ${className}`}>
+      <video
+        ref={videoRef as React.RefObject<HTMLVideoElement>}
+        src={currentSrc}
+        autoPlay
+        muted={isMuted}
+        loop
+        playsInline
+        preload="auto"
+        className="w-full h-full object-cover"
+        onLoadedData={() => videoRef.current?.play().catch(() => {})}
+        onError={() => {
+          if (currentSrc === localSrc) setCurrentSrc(backupSrc);
+          else setHasError(true);
+        }}
+      />
+      {hasError && (
+        <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-4">
+          <p className="text-white/40 text-[10px] uppercase tracking-widest text-center">
+            Media Error
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -259,24 +319,12 @@ export default function App() {
                   </button>
                 </div>
                 <div className="card-img-wrap relative w-full h-full overflow-hidden bg-[#111]">
-                  <video 
-                    ref={el => videoRefs.current[0] = el}
-                    autoPlay
-                    muted={isMuted}
-                    loop 
-                    playsInline
-                    preload="auto"
-                    src="/carpentry.mp4"
-                    onError={(e) => {
-                      console.error("Master Carpentry video failed to load:", e);
-                      // Fallback to CDN if local fails
-                      const video = e.currentTarget;
-                      if (video.src.includes('/carpentry.mp4')) {
-                        video.src = "https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4";
-                        video.play().catch(console.error);
-                      }
-                    }}
-                    className="card-img w-full h-full object-cover"
+                  <VideoBackground 
+                    id={0}
+                    localSrc="/carpentry.mp4"
+                    backupSrc="https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4"
+                    isMuted={isMuted}
+                    videoRef={{ current: videoRefs.current[0] }}
                   />
                   
                   {/* OVERLAY CONTROLS */}
@@ -369,22 +417,11 @@ export default function App() {
                   </button>
                 </div>
                 <div className="card-img-wrap relative w-full h-full overflow-hidden bg-[#111]">
-                  <video 
-                    ref={el => videoRefs.current[1] = el}
-                    autoPlay
-                    muted 
-                    loop 
-                    playsInline
-                    preload="auto"
-                    src="/repairs.mp4"
-                    onError={(e) => {
-                      const video = e.currentTarget;
-                      if (video.src.includes('/repairs.mp4')) {
-                        video.src = "https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4";
-                        video.play().catch(console.error);
-                      }
-                    }}
-                    className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
+                  <VideoBackground 
+                    id={1}
+                    localSrc="/repairs.mp4"
+                    backupSrc="https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4"
+                    videoRef={{ current: videoRefs.current[1] }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -410,24 +447,11 @@ export default function App() {
                   </button>
                 </div>
                 <div className="card-img-wrap relative w-full h-full overflow-hidden bg-[#111]">
-                  <video 
-                    ref={el => videoRefs.current[2] = el}
-                    autoPlay
-                    muted 
-                    loop 
-                    playsInline
-                    preload="auto"
-                    src="/banz_reno_vid2.mp4"
-                    onError={(e) => {
-                      const video = e.currentTarget;
-                      if (video.src.includes('/banz_reno_vid2.mp4')) {
-                        video.src = "/renovation.mp4";
-                      } else if (video.src.includes('/renovation.mp4')) {
-                        video.src = "https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4";
-                      }
-                      video.play().catch(console.error);
-                    }}
-                    className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
+                  <VideoBackground 
+                    id={2}
+                    localSrc="/banz_reno_vid2.mp4"
+                    backupSrc="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4"
+                    videoRef={{ current: videoRefs.current[2] }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -463,24 +487,11 @@ export default function App() {
           {/* VIDEO SECTION */}
           <div className="w-full max-w-4xl px-6 mb-12">
             <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-[#111]">
-              <video 
-                ref={el => videoRefs.current[3] = el}
-                autoPlay
-                muted 
-                loop 
-                playsInline
-                preload="auto"
-                src="/banz_reno_washroom.mp4"
-                onError={(e) => {
-                  const video = e.currentTarget;
-                  if (video.src.includes('/banz_reno_washroom.mp4')) {
-                    video.src = "/transformation.mp4";
-                  } else if (video.src.includes('/transformation.mp4')) {
-                    video.src = "https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4";
-                  }
-                  video.play().catch(console.error);
-                }}
-                className="w-full h-full object-cover"
+              <VideoBackground 
+                id={3}
+                localSrc="/banz_reno_washroom.mp4"
+                backupSrc="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4"
+                videoRef={{ current: videoRefs.current[3] }}
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                 <Play className="w-12 h-12 text-white" />
