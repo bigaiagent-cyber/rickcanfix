@@ -281,8 +281,8 @@ export default function App() {
                     crossOrigin="anonymous"
                     className="card-img w-full h-full object-cover"
                   >
-                    <source src="/carpentry.mp4" type="video/mp4" />
                     <source src="https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4" type="video/mp4" />
+                    <source src="/carpentry.mp4" type="video/mp4" />
                   </video>
                   
                   {/* OVERLAY CONTROLS */}
@@ -385,8 +385,8 @@ export default function App() {
                     crossOrigin="anonymous"
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
                   >
-                    <source src="/repairs.mp4" type="video/mp4" />
                     <source src="https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4" type="video/mp4" />
+                    <source src="/repairs.mp4" type="video/mp4" />
                   </video>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -422,9 +422,9 @@ export default function App() {
                     crossOrigin="anonymous"
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
                   >
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4" type="video/mp4" />
                     <source src="/banz_reno_vid2.mp4" type="video/mp4" />
                     <source src="/renovation.mp4" type="video/mp4" />
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4" type="video/mp4" />
                   </video>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -470,9 +470,9 @@ export default function App() {
                 crossOrigin="anonymous"
                 className="w-full h-full object-cover"
               >
+                <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4" type="video/mp4" />
                 <source src="/banz_reno_washroom.mp4" type="video/mp4" />
                 <source src="/transformation.mp4" type="video/mp4" />
-                <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4" type="video/mp4" />
               </video>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                 <Play className="w-12 h-12 text-white" />
