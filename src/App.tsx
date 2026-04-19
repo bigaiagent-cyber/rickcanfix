@@ -25,63 +25,93 @@ interface VideoBackgroundProps {
   backupSrc: string;
   className?: string;
   isMuted?: boolean;
-  videoRef?: React.RefObject<HTMLVideoElement | null>; // Support for external control
 }
 
-const VideoBackground = ({ id, localSrc, backupSrc, className, isMuted = true, videoRef: externalRef }: VideoBackgroundProps) => {
-  const internalRef = useRef<HTMLVideoElement>(null);
-  const videoRef = externalRef || internalRef;
-  const [useBackup, setUseBackup] = useState(false);
-  const [hasError, setHasError] = useState(false);
+const VideoBackground = React.forwardRef<HTMLVideoElement, VideoBackgroundProps>(
+  ({ id, localSrc, backupSrc, className, isMuted = true }, ref) => {
+    const [useBackup, setUseBackup] = useState(false);
+    const [hasError, setHasError] = useState(false);
+    const [isAttemptingPlay, setIsAttemptingPlay] = useState(false);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    const currentSrc = useBackup ? backupSrc : localSrc;
 
-    const startPlayback = async () => {
-      try {
-        video.muted = isMuted;
-        await video.play();
-      } catch (err) {
-        if (!useBackup) setUseBackup(true);
-      }
-    };
+    // Use a secondary internal ref if the forwarded one is null (safety)
+    const internalRef = useRef<HTMLVideoElement>(null);
+    const activeRef = (ref as React.RefObject<HTMLVideoElement | null>) || internalRef;
 
-    startPlayback();
-  }, [useBackup, isMuted, videoRef]);
+    useEffect(() => {
+      const video = activeRef.current;
+      if (!video) return;
 
-  return (
-    <div className={`relative w-full h-full ${className}`}>
-      <video
-        ref={videoRef as React.RefObject<HTMLVideoElement>}
-        autoPlay
-        muted={isMuted}
-        loop
-        playsInline
-        preload="auto"
-        className="w-full h-full object-cover"
-        onLoadedData={() => videoRef.current?.play().catch(() => {})}
-        onError={() => {
-          if (!useBackup) setUseBackup(true);
-          else setHasError(true);
-        }}
-      >
-        {!useBackup ? (
-          <source src={localSrc} type="video/mp4" />
-        ) : (
-          <source src={backupSrc} type="video/mp4" />
+      const tryPlay = async () => {
+        if (isAttemptingPlay) return;
+        setIsAttemptingPlay(true);
+        try {
+          video.muted = isMuted;
+          await video.play();
+          console.log(`[VIDEO ${id}] Playing ${currentSrc}`);
+        } catch (err) {
+          console.warn(`[VIDEO ${id}] Playback failed for ${currentSrc}.`, err);
+          if (!useBackup) {
+            console.log(`[VIDEO ${id}] Switching to backup...`);
+            setUseBackup(true);
+          }
+        } finally {
+          setIsAttemptingPlay(false);
+        }
+      };
+
+      tryPlay();
+    }, [currentSrc, isMuted, useBackup, id, activeRef]);
+
+    return (
+      <div className={`relative w-full h-full ${className} bg-black`}>
+        <video
+          key={currentSrc} // Force re-mount on source change for reliability
+          ref={ref}
+          src={currentSrc}
+          autoPlay
+          muted={isMuted}
+          loop
+          playsInline
+          preload="auto"
+          className="w-full h-full object-cover"
+          onLoadedData={() => {
+            const video = activeRef.current;
+            if (video) video.play().catch(() => {});
+          }}
+          onError={(e) => {
+            console.error(`[VIDEO ${id}] Source error: ${currentSrc}`);
+            if (!useBackup) {
+              setUseBackup(true);
+            } else {
+              setHasError(true);
+            }
+          }}
+        />
+        
+        {/* Diagnostic Status (Dev only/Diagnostic) */}
+        {!hasError && !useBackup && (
+          <div className="absolute top-2 right-2 opacity-10 pointer-events-none text-[8px] text-white uppercase">
+            Primary: {localSrc.split('/').pop()}
+          </div>
         )}
-      </video>
-      {hasError && (
-        <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-4">
-          <p className="text-white/40 text-[10px] uppercase tracking-widest text-center">
-            Media Error
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
+        
+        {hasError && (
+          <div className="absolute inset-0 bg-[#0a0a0a] flex items-center justify-center p-4">
+            <div className="text-center group">
+              <p className="text-white/20 text-[10px] uppercase tracking-[0.2em] mb-4">
+                Playback Unavailable
+              </p>
+              <div className="w-12 h-[1px] bg-white/10 mx-auto" />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+VideoBackground.displayName = 'VideoBackground';
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -348,7 +378,7 @@ export default function App() {
                     localSrc="/carpentry.mp4"
                     backupSrc="https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4"
                     isMuted={isMuted}
-                    videoRef={{ current: videoRefs.current[0] }}
+                    ref={el => videoRefs.current[0] = el}
                   />
                   
                   {/* OVERLAY CONTROLS */}
@@ -445,7 +475,7 @@ export default function App() {
                     id={1}
                     localSrc="/repairs.mp4"
                     backupSrc="https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4"
-                    videoRef={{ current: videoRefs.current[1] }}
+                    ref={el => videoRefs.current[1] = el}
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -475,7 +505,7 @@ export default function App() {
                     id={2}
                     localSrc="/banz_reno_vid2.mp4"
                     backupSrc="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4"
-                    videoRef={{ current: videoRefs.current[2] }}
+                    ref={el => videoRefs.current[2] = el}
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
@@ -515,7 +545,7 @@ export default function App() {
                 id={3}
                 localSrc="/banz_reno_washroom.mp4"
                 backupSrc="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4"
-                videoRef={{ current: videoRefs.current[3] }}
+                ref={el => videoRefs.current[3] = el}
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                 <Play className="w-12 h-12 text-white" />
