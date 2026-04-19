@@ -266,12 +266,18 @@ export default function App() {
                     loop 
                     playsInline
                     preload="auto"
-                    onLoadedData={(e) => e.currentTarget.play()}
+                    src="/carpentry.mp4"
+                    onError={(e) => {
+                      console.error("Master Carpentry video failed to load:", e);
+                      // Fallback to CDN if local fails
+                      const video = e.currentTarget;
+                      if (video.src.includes('/carpentry.mp4')) {
+                        video.src = "https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4";
+                        video.play().catch(console.error);
+                      }
+                    }}
                     className="card-img w-full h-full object-cover"
-                  >
-                    <source src="/carpentry.mp4" type="video/mp4" />
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-wooden-plank-41589-large.mp4" type="video/mp4" />
-                  </video>
+                  />
                   
                   {/* OVERLAY CONTROLS */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-black/10 hover:bg-black/30 transition-colors group">
@@ -370,12 +376,16 @@ export default function App() {
                     loop 
                     playsInline
                     preload="auto"
-                    onLoadedData={(e) => e.currentTarget.play()}
+                    src="/repairs.mp4"
+                    onError={(e) => {
+                      const video = e.currentTarget;
+                      if (video.src.includes('/repairs.mp4')) {
+                        video.src = "https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4";
+                        video.play().catch(console.error);
+                      }
+                    }}
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
-                  >
-                    <source src="/repairs.mp4" type="video/mp4" />
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-worker-painting-a-wall-with-a-roller-41583-large.mp4" type="video/mp4" />
-                  </video>
+                  />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
                   </div>
@@ -407,13 +417,18 @@ export default function App() {
                     loop 
                     playsInline
                     preload="auto"
-                    onLoadedData={(e) => e.currentTarget.play()}
+                    src="/banz_reno_vid2.mp4"
+                    onError={(e) => {
+                      const video = e.currentTarget;
+                      if (video.src.includes('/banz_reno_vid2.mp4')) {
+                        video.src = "/renovation.mp4";
+                      } else if (video.src.includes('/renovation.mp4')) {
+                        video.src = "https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4";
+                      }
+                      video.play().catch(console.error);
+                    }}
                     className="card-img w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out"
-                  >
-                    <source src="/banz_reno_vid2.mp4" type="video/mp4" />
-                    <source src="/renovation.mp4" type="video/mp4" />
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-with-glass-shower-40543-large.mp4" type="video/mp4" />
-                  </video>
+                  />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <Play className="w-12 h-12 text-white" />
                   </div>
@@ -455,13 +470,18 @@ export default function App() {
                 loop 
                 playsInline
                 preload="auto"
-                onLoadedData={(e) => e.currentTarget.play()}
+                src="/banz_reno_washroom.mp4"
+                onError={(e) => {
+                  const video = e.currentTarget;
+                  if (video.src.includes('/banz_reno_washroom.mp4')) {
+                    video.src = "/transformation.mp4";
+                  } else if (video.src.includes('/transformation.mp4')) {
+                    video.src = "https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4";
+                  }
+                  video.play().catch(console.error);
+                }}
                 className="w-full h-full object-cover"
-              >
-                <source src="/banz_reno_washroom.mp4" type="video/mp4" />
-                <source src="/transformation.mp4" type="video/mp4" />
-                <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-kitchen-with-white-cabinets-and-island-40543-large.mp4" type="video/mp4" />
-              </video>
+              />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                 <Play className="w-12 h-12 text-white" />
               </div>
