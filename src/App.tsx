@@ -31,7 +31,7 @@ interface VideoBackgroundProps {
 const VideoBackground = ({ id, localSrc, backupSrc, className, isMuted = true, videoRef: externalRef }: VideoBackgroundProps) => {
   const internalRef = useRef<HTMLVideoElement>(null);
   const videoRef = externalRef || internalRef;
-  const [currentSrc, setCurrentSrc] = useState(localSrc);
+  const [useBackup, setUseBackup] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -43,18 +43,17 @@ const VideoBackground = ({ id, localSrc, backupSrc, className, isMuted = true, v
         video.muted = isMuted;
         await video.play();
       } catch (err) {
-        if (currentSrc === localSrc) setCurrentSrc(backupSrc);
+        if (!useBackup) setUseBackup(true);
       }
     };
 
     startPlayback();
-  }, [currentSrc, isMuted, id, localSrc, backupSrc, videoRef]);
+  }, [useBackup, isMuted, videoRef]);
 
   return (
     <div className={`relative w-full h-full ${className}`}>
       <video
         ref={videoRef as React.RefObject<HTMLVideoElement>}
-        src={currentSrc}
         autoPlay
         muted={isMuted}
         loop
@@ -63,10 +62,16 @@ const VideoBackground = ({ id, localSrc, backupSrc, className, isMuted = true, v
         className="w-full h-full object-cover"
         onLoadedData={() => videoRef.current?.play().catch(() => {})}
         onError={() => {
-          if (currentSrc === localSrc) setCurrentSrc(backupSrc);
+          if (!useBackup) setUseBackup(true);
           else setHasError(true);
         }}
-      />
+      >
+        {!useBackup ? (
+          <source src={localSrc} type="video/mp4" />
+        ) : (
+          <source src={backupSrc} type="video/mp4" />
+        )}
+      </video>
       {hasError && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-4">
           <p className="text-white/40 text-[10px] uppercase tracking-widest text-center">
@@ -86,6 +91,25 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  // Global Video Unblocker (Industry standard for mobile/Vercel)
+  useEffect(() => {
+    const unblockVideos = () => {
+      videoRefs.current.forEach(v => {
+        if (v && v.paused) {
+          v.play().catch(() => {});
+        }
+      });
+      window.removeEventListener('click', unblockVideos);
+      window.removeEventListener('touchstart', unblockVideos);
+    };
+    window.addEventListener('click', unblockVideos);
+    window.addEventListener('touchstart', unblockVideos);
+    return () => {
+      window.removeEventListener('click', unblockVideos);
+      window.removeEventListener('touchstart', unblockVideos);
+    };
+  }, []);
 
   // Preloader side-effect
   useEffect(() => {
